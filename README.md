@@ -1,42 +1,39 @@
 # Automotive Data Analysis with Python
 
 ## Overview
-This project focuses on automotive sensor data analysis using Python.
 
-It simulates and analyzes vehicle data such as vehicle speed, engine RPM, throttle position, brake pressure, battery voltage and motor temperature.
+This project analyzes simulated automotive sensor data using Python.
 
-The goal of this project is to demonstrate how Python can be used for engineering data analysis, vehicle performance evaluation, warning detection, visualization and automated technical reporting.
+It reads vehicle data from a CSV file, validates the dataset, calculates engineering statistics, detects warning conditions, creates visualizations, and generates an automated technical report.
 
-This project is especially relevant for automotive engineering, mechatronics, embedded systems and data analysis applications.
+The project is especially relevant for automotive engineering, mechatronics, data analysis, testing, validation, and vehicle performance evaluation.
 
 ## Main Features
-- Read automotive sensor data from a CSV file
-- Validate numeric data before analysis
-- Sort data by time
-- Detect duplicate or incorrect time values
-- Calculate acceleration from speed data
-- Analyze vehicle speed behavior
-- Analyze engine RPM behavior
-- Analyze throttle and brake signals
-- Detect high motor temperature warnings
-- Detect low battery voltage warnings
-- Detect high-speed events
-- Detect hard acceleration events
-- Detect hard braking events
-- Generate separate plots for vehicle signals
-- Generate one dashboard plot
-- Create an automated engineering report
-- Save generated files inside an `outputs/` folder
+
+- Reads automotive sensor data from a CSV file
+- Validates required columns and numeric values
+- Sorts the dataset by time
+- Detects duplicate or incorrect time values
+- Calculates acceleration from vehicle speed and time
+- Analyzes vehicle speed, engine RPM, battery voltage, and motor temperature
+- Detects high motor temperature warnings
+- Detects low battery voltage warnings
+- Detects high-speed events
+- Detects hard acceleration and hard braking events
+- Generates separate signal plots
+- Generates one dashboard-style overview plot
+- Creates an automated engineering report
 
 ## Technologies Used
+
 - Python
-- Pandas
-- Matplotlib
+- pandas
+- matplotlib
 - CSV data analysis
 - Automotive sensor data
-- Engineering automation
-- Vehicle performance analysis
 - Data validation
+- Warning detection
+- Engineering visualization
 - Automated reporting
 
 ## Repository Structure
@@ -44,148 +41,159 @@ This project is especially relevant for automotive engineering, mechatronics, em
 ```text
 automotive-data-analysis-python/
 │
-├── README.md                    # Project documentation
-├── automotive_analysis.py        # Main Python analysis script
-├── vehicle_data.csv              # Sample automotive sensor dataset
-├── requirements.txt              # Required Python libraries
-└── outputs/                      # Generated plots and report
-Input Data
+├── automotive_analysis.py
+├── vehicle_data.csv
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── screenshots/
+│   └── automotive_dashboard.png
+└── outputs/
+    ├── automotive_report.txt
+    ├── speed_plot.png
+    ├── rpm_plot.png
+    ├── temperature_plot.png
+    ├── battery_plot.png
+    ├── throttle_brake_plot.png
+    └── automotive_dashboard.png
+```
+
+## Input Data
 
 The project uses a CSV file named:
 
+```text
 vehicle_data.csv
+```
 
-The dataset contains simulated automotive sensor values:
+The dataset contains simulated automotive sensor values.
 
-Column	Description
-time_s	Time in seconds
-vehicle_speed_kmh	Vehicle speed in km/h
-engine_rpm	Engine speed in revolutions per minute
-throttle_percent	Throttle position in percent
-brake_pressure_bar	Brake pressure in bar
-battery_voltage_v	Battery voltage in volts
-motor_temperature_c	Motor temperature in degrees Celsius
-Analysis Logic
-Data Validation
+| Column | Description |
+|---|---|
+| `time_s` | Time in seconds |
+| `vehicle_speed_kmh` | Vehicle speed in km/h |
+| `engine_rpm` | Engine speed in revolutions per minute |
+| `throttle_percent` | Throttle position in percent |
+| `brake_pressure_bar` | Brake pressure in bar |
+| `battery_voltage_v` | Battery voltage in volts |
+| `motor_temperature_c` | Motor temperature in degrees Celsius |
+
+## Analysis Logic
+
+### Data Validation
 
 Before the analysis starts, the script checks that:
 
-the CSV file exists
-all required columns are available
-all values are numeric
-time values are sorted
-time values do not repeat or go backwards
+- the CSV file exists
+- all required columns are available
+- all required values are numeric
+- time values are sorted correctly
+- time values do not repeat or go backwards
 
-This makes the project more reliable and closer to a real engineering workflow.
+This makes the project closer to a real engineering data workflow.
 
-Speed Analysis
-
-The script analyzes vehicle speed behavior and calculates:
-
-Average speed
-Maximum speed
-Minimum speed
-Maximum acceleration
-Minimum acceleration
+### Acceleration Calculation
 
 Acceleration is calculated from speed and time data.
 
-Engine RPM Analysis
+The script converts speed from km/h to m/s and then calculates the acceleration between time steps.
 
-The script analyzes engine RPM values and calculates:
+### Warning Detection
 
-Average RPM
-Maximum RPM
-Minimum RPM
-Temperature Monitoring
+The script detects warning conditions using simple engineering limits.
 
-The script detects high motor temperature events.
+| Condition | Limit |
+|---|---|
+| High motor temperature | `motor_temperature_c > 90` |
+| Low battery voltage | `battery_voltage_v < 12.0` |
+| High speed event | `vehicle_speed_kmh > 100` |
+| Hard acceleration | `acceleration_mps2 > 2.5` |
+| Hard braking | `acceleration_mps2 < -3.0` |
 
-A warning is triggered when:
+## Generated Output
 
-motor_temperature_c > 90
-Battery Monitoring
+After running the script, the following files are generated in the `outputs/` folder:
 
-The script detects low battery voltage events.
+- `outputs/automotive_report.txt`
+- `outputs/speed_plot.png`
+- `outputs/rpm_plot.png`
+- `outputs/temperature_plot.png`
+- `outputs/battery_plot.png`
+- `outputs/throttle_brake_plot.png`
+- `outputs/automotive_dashboard.png`
 
-A warning is triggered when:
+## Example Output
 
-battery_voltage_v < 12.0
-Driving Behavior Analysis
+### Automotive Dashboard
 
-The script analyzes simple driving behavior by detecting:
+![Automotive Dashboard](screenshots/automotive_dashboard.png)
 
-High-speed events
-Braking events
-Hard acceleration events
-Hard braking events
+## How to Run
 
-The limits used in the script are:
+Install the required libraries:
 
-High speed: vehicle_speed_kmh > 100
-Hard acceleration: acceleration_mps2 > 2.5
-Hard braking: acceleration_mps2 < -3.0
-Generated Output
-
-After running the script, the following files are generated in the outputs/ folder:
-
-outputs/automotive_report.txt
-outputs/speed_plot.png
-outputs/rpm_plot.png
-outputs/temperature_plot.png
-outputs/battery_plot.png
-outputs/throttle_brake_plot.png
-outputs/automotive_dashboard.png
-How to Run
-1. Install required libraries
+```bash
 pip install -r requirements.txt
-2. Run the analysis script
+```
+
+Run the analysis script:
+
+```bash
 python automotive_analysis.py
-Example Output
+```
+
+Expected terminal output:
+
+```text
 Automotive analysis completed successfully.
 Report saved as: outputs/automotive_report.txt
 Plots saved in: outputs
-Project Purpose
+```
 
-The purpose of this project is to show how Python can be used in automotive engineering workflows.
+## Skills Demonstrated
 
-It demonstrates:
+- Python programming
+- CSV data handling
+- Data validation
+- Automotive sensor data analysis
+- Engineering calculations
+- Acceleration calculation
+- Warning detection
+- Data visualization with matplotlib
+- Automated technical report generation
 
-Data analysis
-Sensor signal evaluation
-Data validation
-Automated reporting
-Warning detection
-Vehicle behavior analysis
-Engineering visualization
-Python automation for technical reports
-What I Learned
-How to analyze automotive sensor data with Python
-How to work with CSV datasets using Pandas
-How to validate input data before analysis
-How to calculate acceleration from speed data
-How to visualize vehicle signals using Matplotlib
-How to detect warning conditions from sensor values
-How to generate automated engineering reports
-How Python can support automotive and mechatronics projects
-Possible Applications
-Automotive data analysis
-Vehicle performance evaluation
-Sensor data monitoring
-Engineering test reports
-Mechatronics projects
-Embedded systems data analysis
-Internship portfolio project for automotive companies
-Future Improvements
-Add real vehicle data
-Add CAN bus data analysis
-Add OBD-II data support
-Add battery performance analysis
-Add electric vehicle data analysis
-Add dashboard visualization with Streamlit
-Add PDF report generation
-Add comparison between different driving cycles
-Add machine learning for anomaly detection
-Project Status
+## What I Learned
 
-This project was created as a Python engineering portfolio project focused on automotive data analysis, warning detection and automated reporting.
+- How to analyze automotive sensor data with Python
+- How to work with CSV datasets using pandas
+- How to validate input data before analysis
+- How to calculate acceleration from speed and time data
+- How to visualize vehicle signals using matplotlib
+- How to detect warning conditions from sensor values
+- How Python can support automotive and mechatronics workflows
+
+## Possible Applications
+
+- Automotive data analysis
+- Vehicle performance evaluation
+- Sensor data monitoring
+- Engineering test reports
+- Mechatronics projects
+- Embedded systems data analysis
+- Internship portfolio project for automotive companies
+
+## Future Improvements
+
+- Add real vehicle data
+- Add CAN bus data analysis
+- Add OBD-II data support
+- Add battery performance analysis
+- Add electric vehicle data analysis
+- Add dashboard visualization with Streamlit
+- Add PDF report generation
+- Add comparison between different driving cycles
+- Add machine learning for anomaly detection
+
+## Project Status
+
+This project was created as a Python engineering portfolio project focused on automotive data analysis, warning detection, visualization, and automated reporting.

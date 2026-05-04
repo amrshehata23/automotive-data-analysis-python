@@ -6,7 +6,7 @@ This project analyzes simulated automotive sensor data using Python.
 
 It reads vehicle data from a CSV file, validates the dataset, calculates engineering statistics, detects warning conditions, creates visualizations, and generates an automated technical report.
 
-The project is especially relevant for automotive engineering, mechatronics, data analysis, testing, validation, and vehicle performance evaluation.
+The project is relevant for automotive engineering, mechatronics, data analysis, testing, validation, and vehicle performance evaluation.
 
 ## Main Features
 
@@ -21,7 +21,7 @@ The project is especially relevant for automotive engineering, mechatronics, dat
 - Detects high-speed events
 - Detects hard acceleration and hard braking events
 - Generates separate signal plots
-- Generates one dashboard-style overview plot
+- Generates a dashboard-style overview plot
 - Creates an automated engineering report
 
 ## Technologies Used

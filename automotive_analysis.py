@@ -2,8 +2,9 @@
 Automotive Data Analysis with Python
 
 This script analyzes simulated automotive sensor data.
-It reads vehicle data from a CSV file, calculates engineering statistics,
-detects warning conditions, creates plots, and generates an automated report.
+It reads vehicle data from a CSV file, validates the data, calculates
+engineering statistics, detects warning conditions, creates plots,
+and generates an automated technical report.
 
 Project: Automotive Data Analysis with Python
 Language: Python
@@ -19,6 +20,13 @@ import pandas as pd
 DATA_FILE = Path("vehicle_data.csv")
 OUTPUT_DIR = Path("outputs")
 REPORT_FILE = OUTPUT_DIR / "automotive_report.txt"
+
+SPEED_PLOT_FILE = OUTPUT_DIR / "speed_plot.png"
+RPM_PLOT_FILE = OUTPUT_DIR / "rpm_plot.png"
+TEMPERATURE_PLOT_FILE = OUTPUT_DIR / "temperature_plot.png"
+BATTERY_PLOT_FILE = OUTPUT_DIR / "battery_plot.png"
+THROTTLE_BRAKE_PLOT_FILE = OUTPUT_DIR / "throttle_brake_plot.png"
+DASHBOARD_FILE = OUTPUT_DIR / "automotive_dashboard.png"
 
 HIGH_TEMPERATURE_LIMIT = 90.0
 LOW_BATTERY_LIMIT = 12.0
@@ -40,278 +48,326 @@ REQUIRED_COLUMNS = [
 def load_vehicle_data(file_path: Path) -> pd.DataFrame:
     """Load and validate automotive sensor data from a CSV file."""
     if not file_path.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise FileNotFoundError(f"Input file not found: {file_path}")
 
-    data = pd.read_csv(file_path)
+    dataframe = pd.read_csv(file_path)
 
-    missing_columns = set(REQUIRED_COLUMNS) - set(data.columns)
-    if missing_columns:
-        raise ValueError(f"Missing columns in CSV file: {sorted(missing_columns)}")
-
-    data = data[REQUIRED_COLUMNS].copy()
-
-    for column in REQUIRED_COLUMNS:
-        data[column] = pd.to_numeric(data[column], errors="coerce")
-
-    if data.isna().any().any():
-        bad_columns = data.columns[data.isna().any()].tolist()
-        raise ValueError(f"Invalid or missing numeric values in: {bad_columns}")
-
-    data = data.sort_values("time_s").reset_index(drop=True)
-
-    if data["time_s"].diff().fillna(1).le(0).any():
-        raise ValueError("Time values must not repeat or go backwards.")
-
-    return data
-
-
-def calculate_acceleration(data: pd.DataFrame) -> pd.DataFrame:
-    """Calculate acceleration from vehicle speed."""
-    data = data.copy()
-
-    speed_mps = data["vehicle_speed_kmh"] / 3.6
-    time_s = data["time_s"]
-
-    data["acceleration_mps2"] = speed_mps.diff() / time_s.diff()
-    data["acceleration_mps2"] = data["acceleration_mps2"].fillna(0)
-
-    return data
-
-
-def analyze_data(data: pd.DataFrame) -> dict:
-    """Calculate engineering statistics and warning conditions."""
-    return {
-        "average_speed": data["vehicle_speed_kmh"].mean(),
-        "maximum_speed": data["vehicle_speed_kmh"].max(),
-        "minimum_speed": data["vehicle_speed_kmh"].min(),
-        "maximum_acceleration": data["acceleration_mps2"].max(),
-        "minimum_acceleration": data["acceleration_mps2"].min(),
-        "average_rpm": data["engine_rpm"].mean(),
-        "maximum_rpm": data["engine_rpm"].max(),
-        "minimum_rpm": data["engine_rpm"].min(),
-        "average_temperature": data["motor_temperature_c"].mean(),
-        "maximum_temperature": data["motor_temperature_c"].max(),
-        "minimum_temperature": data["motor_temperature_c"].min(),
-        "average_voltage": data["battery_voltage_v"].mean(),
-        "maximum_voltage": data["battery_voltage_v"].max(),
-        "minimum_voltage": data["battery_voltage_v"].min(),
-        "high_temperature_warnings": int(
-            (data["motor_temperature_c"] > HIGH_TEMPERATURE_LIMIT).sum()
-        ),
-        "low_battery_warnings": int(
-            (data["battery_voltage_v"] < LOW_BATTERY_LIMIT).sum()
-        ),
-        "high_speed_events": int(
-            (data["vehicle_speed_kmh"] > HIGH_SPEED_LIMIT).sum()
-        ),
-        "hard_acceleration_events": int(
-            (data["acceleration_mps2"] > HARD_ACCELERATION_LIMIT).sum()
-        ),
-        "hard_braking_events": int(
-            (data["acceleration_mps2"] < HARD_BRAKING_LIMIT).sum()
-        ),
-        "braking_events": int((data["brake_pressure_bar"] > 0).sum()),
-    }
-
-
-def create_plots(data: pd.DataFrame) -> None:
-    """Create automotive analysis plots."""
-    OUTPUT_DIR.mkdir(exist_ok=True)
-
-    plots = [
-        (
-            "vehicle_speed_kmh",
-            "Vehicle Speed [km/h]",
-            "Vehicle Speed Over Time",
-            "speed_plot.png",
-        ),
-        (
-            "engine_rpm",
-            "Engine RPM",
-            "Engine RPM Over Time",
-            "rpm_plot.png",
-        ),
-        (
-            "motor_temperature_c",
-            "Motor Temperature [°C]",
-            "Motor Temperature Over Time",
-            "temperature_plot.png",
-        ),
-        (
-            "battery_voltage_v",
-            "Battery Voltage [V]",
-            "Battery Voltage Over Time",
-            "battery_plot.png",
-        ),
+    missing_columns = [
+        column for column in REQUIRED_COLUMNS if column not in dataframe.columns
     ]
 
-    for column, ylabel, title, filename in plots:
-        plt.figure(figsize=(9, 5))
-        plt.plot(data["time_s"], data[column], linewidth=2)
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {missing_columns}")
 
-        if column == "motor_temperature_c":
-            plt.axhline(
-                HIGH_TEMPERATURE_LIMIT,
-                linestyle="--",
-                label="High temperature limit",
-            )
-            plt.legend()
+    dataframe = dataframe.copy()
 
-        if column == "battery_voltage_v":
-            plt.axhline(
-                LOW_BATTERY_LIMIT,
-                linestyle="--",
-                label="Low battery limit",
-            )
-            plt.legend()
+    for column in REQUIRED_COLUMNS:
+        dataframe[column] = pd.to_numeric(dataframe[column], errors="coerce")
 
-        plt.xlabel("Time [s]")
-        plt.ylabel(ylabel)
-        plt.title(title)
-        plt.grid(True)
-        plt.savefig(OUTPUT_DIR / filename, dpi=300, bbox_inches="tight")
-        plt.close()
+    if dataframe[REQUIRED_COLUMNS].isnull().any().any():
+        raise ValueError("The dataset contains missing or non-numeric values.")
 
+    dataframe = dataframe.sort_values("time_s").reset_index(drop=True)
+
+    if dataframe["time_s"].duplicated().any():
+        raise ValueError("Duplicate time values detected.")
+
+    if (dataframe["time_s"].diff().dropna() <= 0).any():
+        raise ValueError("Time values must be strictly increasing.")
+
+    return dataframe
+
+
+def calculate_acceleration(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Calculate acceleration from vehicle speed and time data."""
+    dataframe = dataframe.copy()
+
+    speed_mps = dataframe["vehicle_speed_kmh"] / 3.6
+    time_diff = dataframe["time_s"].diff()
+    speed_diff = speed_mps.diff()
+
+    dataframe["acceleration_mps2"] = speed_diff / time_diff
+    dataframe["acceleration_mps2"] = dataframe["acceleration_mps2"].fillna(0)
+
+    return dataframe
+
+
+def detect_warning_conditions(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Add warning columns based on engineering limits."""
+    dataframe = dataframe.copy()
+
+    dataframe["high_temperature_warning"] = (
+        dataframe["motor_temperature_c"] > HIGH_TEMPERATURE_LIMIT
+    )
+
+    dataframe["low_battery_warning"] = (
+        dataframe["battery_voltage_v"] < LOW_BATTERY_LIMIT
+    )
+
+    dataframe["high_speed_event"] = (
+        dataframe["vehicle_speed_kmh"] > HIGH_SPEED_LIMIT
+    )
+
+    dataframe["hard_acceleration_event"] = (
+        dataframe["acceleration_mps2"] > HARD_ACCELERATION_LIMIT
+    )
+
+    dataframe["hard_braking_event"] = (
+        dataframe["acceleration_mps2"] < HARD_BRAKING_LIMIT
+    )
+
+    return dataframe
+
+
+def analyze_vehicle_data(dataframe: pd.DataFrame) -> dict:
+    """Calculate main automotive engineering statistics."""
+    analysis = {
+        "total_records": len(dataframe),
+        "total_duration_s": dataframe["time_s"].max() - dataframe["time_s"].min(),
+        "average_speed_kmh": dataframe["vehicle_speed_kmh"].mean(),
+        "maximum_speed_kmh": dataframe["vehicle_speed_kmh"].max(),
+        "minimum_speed_kmh": dataframe["vehicle_speed_kmh"].min(),
+        "average_rpm": dataframe["engine_rpm"].mean(),
+        "maximum_rpm": dataframe["engine_rpm"].max(),
+        "minimum_rpm": dataframe["engine_rpm"].min(),
+        "average_temperature_c": dataframe["motor_temperature_c"].mean(),
+        "maximum_temperature_c": dataframe["motor_temperature_c"].max(),
+        "average_battery_voltage_v": dataframe["battery_voltage_v"].mean(),
+        "minimum_battery_voltage_v": dataframe["battery_voltage_v"].min(),
+        "maximum_acceleration_mps2": dataframe["acceleration_mps2"].max(),
+        "minimum_acceleration_mps2": dataframe["acceleration_mps2"].min(),
+        "high_temperature_warnings": int(
+            dataframe["high_temperature_warning"].sum()
+        ),
+        "low_battery_warnings": int(dataframe["low_battery_warning"].sum()),
+        "high_speed_events": int(dataframe["high_speed_event"].sum()),
+        "hard_acceleration_events": int(
+            dataframe["hard_acceleration_event"].sum()
+        ),
+        "hard_braking_events": int(dataframe["hard_braking_event"].sum()),
+    }
+
+    return analysis
+
+
+def create_line_plot(
+    dataframe: pd.DataFrame,
+    y_column: str,
+    title: str,
+    y_label: str,
+    output_file: Path,
+) -> None:
+    """Create and save a simple line plot."""
     plt.figure(figsize=(9, 5))
-    plt.plot(
-        data["time_s"],
-        data["throttle_percent"],
-        linewidth=2,
-        label="Throttle [%]",
-    )
-    plt.plot(
-        data["time_s"],
-        data["brake_pressure_bar"],
-        linewidth=2,
-        label="Brake Pressure [bar]",
-    )
+    plt.plot(dataframe["time_s"], dataframe[y_column])
+    plt.title(title)
     plt.xlabel("Time [s]")
-    plt.ylabel("Signal Value")
-    plt.title("Throttle and Brake Signals")
+    plt.ylabel(y_label)
     plt.grid(True)
-    plt.legend()
-    plt.savefig(OUTPUT_DIR / "throttle_brake_plot.png", dpi=300, bbox_inches="tight")
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300)
     plt.close()
 
-    create_dashboard_plot(data)
 
-
-def create_dashboard_plot(data: pd.DataFrame) -> None:
-    """Create one dashboard plot with the main automotive signals."""
-    figure, axes = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
-
-    axes[0].plot(data["time_s"], data["vehicle_speed_kmh"], linewidth=2)
-    axes[0].set_ylabel("Speed [km/h]")
-    axes[0].set_title("Automotive Sensor Data Dashboard")
-    axes[0].grid(True)
-
-    axes[1].plot(data["time_s"], data["engine_rpm"], linewidth=2)
-    axes[1].set_ylabel("Engine RPM")
-    axes[1].grid(True)
-
-    axes[2].plot(data["time_s"], data["motor_temperature_c"], linewidth=2)
-    axes[2].axhline(
-        HIGH_TEMPERATURE_LIMIT,
-        linestyle="--",
-        label="High temperature limit",
-    )
-    axes[2].set_ylabel("Temp [°C]")
-    axes[2].legend()
-    axes[2].grid(True)
-
-    axes[3].plot(
-        data["time_s"],
-        data["throttle_percent"],
-        linewidth=2,
-        label="Throttle [%]",
-    )
-    axes[3].plot(
-        data["time_s"],
-        data["brake_pressure_bar"],
-        linewidth=2,
-        label="Brake Pressure [bar]",
-    )
-    axes[3].set_xlabel("Time [s]")
-    axes[3].set_ylabel("Input Signals")
-    axes[3].legend()
-    axes[3].grid(True)
-
+def create_throttle_brake_plot(dataframe: pd.DataFrame) -> None:
+    """Create a plot for throttle and brake pressure."""
+    plt.figure(figsize=(9, 5))
+    plt.plot(dataframe["time_s"], dataframe["throttle_percent"], label="Throttle [%]")
+    plt.plot(dataframe["time_s"], dataframe["brake_pressure_bar"], label="Brake Pressure [bar]")
+    plt.title("Throttle and Brake Signals")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Signal Value")
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "automotive_dashboard.png", dpi=300, bbox_inches="tight")
-    plt.close(figure)
+    plt.savefig(THROTTLE_BRAKE_PLOT_FILE, dpi=300)
+    plt.close()
 
 
-def generate_report(results: dict) -> None:
-    """Generate automated automotive analysis report."""
+def create_dashboard(dataframe: pd.DataFrame) -> None:
+    """Create one dashboard-style figure with the most important vehicle signals."""
+    fig, axes = plt.subplots(3, 2, figsize=(14, 10))
+
+    axes[0, 0].plot(dataframe["time_s"], dataframe["vehicle_speed_kmh"])
+    axes[0, 0].set_title("Vehicle Speed")
+    axes[0, 0].set_ylabel("km/h")
+    axes[0, 0].grid(True)
+
+    axes[0, 1].plot(dataframe["time_s"], dataframe["engine_rpm"])
+    axes[0, 1].set_title("Engine RPM")
+    axes[0, 1].set_ylabel("rpm")
+    axes[0, 1].grid(True)
+
+    axes[1, 0].plot(dataframe["time_s"], dataframe["motor_temperature_c"])
+    axes[1, 0].axhline(HIGH_TEMPERATURE_LIMIT, linestyle="--")
+    axes[1, 0].set_title("Motor Temperature")
+    axes[1, 0].set_ylabel("°C")
+    axes[1, 0].grid(True)
+
+    axes[1, 1].plot(dataframe["time_s"], dataframe["battery_voltage_v"])
+    axes[1, 1].axhline(LOW_BATTERY_LIMIT, linestyle="--")
+    axes[1, 1].set_title("Battery Voltage")
+    axes[1, 1].set_ylabel("V")
+    axes[1, 1].grid(True)
+
+    axes[2, 0].plot(dataframe["time_s"], dataframe["throttle_percent"], label="Throttle [%]")
+    axes[2, 0].plot(dataframe["time_s"], dataframe["brake_pressure_bar"], label="Brake [bar]")
+    axes[2, 0].set_title("Throttle and Brake")
+    axes[2, 0].set_xlabel("Time [s]")
+    axes[2, 0].legend()
+    axes[2, 0].grid(True)
+
+    axes[2, 1].plot(dataframe["time_s"], dataframe["acceleration_mps2"])
+    axes[2, 1].axhline(HARD_ACCELERATION_LIMIT, linestyle="--")
+    axes[2, 1].axhline(HARD_BRAKING_LIMIT, linestyle="--")
+    axes[2, 1].set_title("Acceleration")
+    axes[2, 1].set_xlabel("Time [s]")
+    axes[2, 1].set_ylabel("m/s²")
+    axes[2, 1].grid(True)
+
+    fig.suptitle("Automotive Sensor Data Dashboard", fontsize=16)
+    plt.tight_layout()
+    plt.savefig(DASHBOARD_FILE, dpi=300)
+    plt.close()
+
+
+def create_plots(dataframe: pd.DataFrame) -> None:
+    """Create all project plots."""
     OUTPUT_DIR.mkdir(exist_ok=True)
+
+    create_line_plot(
+        dataframe,
+        "vehicle_speed_kmh",
+        "Vehicle Speed Over Time",
+        "Speed [km/h]",
+        SPEED_PLOT_FILE,
+    )
+
+    create_line_plot(
+        dataframe,
+        "engine_rpm",
+        "Engine RPM Over Time",
+        "Engine RPM",
+        RPM_PLOT_FILE,
+    )
+
+    create_line_plot(
+        dataframe,
+        "motor_temperature_c",
+        "Motor Temperature Over Time",
+        "Temperature [°C]",
+        TEMPERATURE_PLOT_FILE,
+    )
+
+    create_line_plot(
+        dataframe,
+        "battery_voltage_v",
+        "Battery Voltage Over Time",
+        "Battery Voltage [V]",
+        BATTERY_PLOT_FILE,
+    )
+
+    create_throttle_brake_plot(dataframe)
+    create_dashboard(dataframe)
+
+
+def generate_report(dataframe: pd.DataFrame, analysis: dict) -> None:
+    """Generate an automated engineering report."""
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+    warning_rows = dataframe[
+        dataframe[
+            [
+                "high_temperature_warning",
+                "low_battery_warning",
+                "high_speed_event",
+                "hard_acceleration_event",
+                "hard_braking_event",
+            ]
+        ].any(axis=1)
+    ]
 
     report_text = f"""
 Automotive Data Analysis Report
-===============================
+========================================
+
+Dataset Summary
+----------------------------------------
+Total records: {analysis["total_records"]}
+Total duration: {analysis["total_duration_s"]:.2f} s
 
 Speed Analysis
---------------
-Average speed: {results["average_speed"]:.2f} km/h
-Maximum speed: {results["maximum_speed"]:.2f} km/h
-Minimum speed: {results["minimum_speed"]:.2f} km/h
-Maximum acceleration: {results["maximum_acceleration"]:.2f} m/s^2
-Minimum acceleration: {results["minimum_acceleration"]:.2f} m/s^2
+----------------------------------------
+Average speed: {analysis["average_speed_kmh"]:.2f} km/h
+Maximum speed: {analysis["maximum_speed_kmh"]:.2f} km/h
+Minimum speed: {analysis["minimum_speed_kmh"]:.2f} km/h
 
 Engine RPM Analysis
--------------------
-Average RPM: {results["average_rpm"]:.2f}
-Maximum RPM: {results["maximum_rpm"]:.2f}
-Minimum RPM: {results["minimum_rpm"]:.2f}
+----------------------------------------
+Average RPM: {analysis["average_rpm"]:.2f}
+Maximum RPM: {analysis["maximum_rpm"]:.2f}
+Minimum RPM: {analysis["minimum_rpm"]:.2f}
 
-Motor Temperature Analysis
---------------------------
-Average temperature: {results["average_temperature"]:.2f} °C
-Maximum temperature: {results["maximum_temperature"]:.2f} °C
-Minimum temperature: {results["minimum_temperature"]:.2f} °C
-High temperature warnings: {results["high_temperature_warnings"]}
+Temperature Analysis
+----------------------------------------
+Average motor temperature: {analysis["average_temperature_c"]:.2f} °C
+Maximum motor temperature: {analysis["maximum_temperature_c"]:.2f} °C
+High temperature warnings: {analysis["high_temperature_warnings"]}
 
-Battery Voltage Analysis
-------------------------
-Average battery voltage: {results["average_voltage"]:.2f} V
-Maximum battery voltage: {results["maximum_voltage"]:.2f} V
-Minimum battery voltage: {results["minimum_voltage"]:.2f} V
-Low battery warnings: {results["low_battery_warnings"]}
+Battery Analysis
+----------------------------------------
+Average battery voltage: {analysis["average_battery_voltage_v"]:.2f} V
+Minimum battery voltage: {analysis["minimum_battery_voltage_v"]:.2f} V
+Low battery warnings: {analysis["low_battery_warnings"]}
 
 Driving Behavior Analysis
--------------------------
-High speed events: {results["high_speed_events"]}
-Braking events: {results["braking_events"]}
-Hard acceleration events: {results["hard_acceleration_events"]}
-Hard braking events: {results["hard_braking_events"]}
+----------------------------------------
+Maximum acceleration: {analysis["maximum_acceleration_mps2"]:.2f} m/s²
+Minimum acceleration: {analysis["minimum_acceleration_mps2"]:.2f} m/s²
+High-speed events: {analysis["high_speed_events"]}
+Hard acceleration events: {analysis["hard_acceleration_events"]}
+Hard braking events: {analysis["hard_braking_events"]}
+
+Engineering Limits
+----------------------------------------
+High temperature limit: {HIGH_TEMPERATURE_LIMIT:.2f} °C
+Low battery limit: {LOW_BATTERY_LIMIT:.2f} V
+High speed limit: {HIGH_SPEED_LIMIT:.2f} km/h
+Hard acceleration limit: {HARD_ACCELERATION_LIMIT:.2f} m/s²
+Hard braking limit: {HARD_BRAKING_LIMIT:.2f} m/s²
+
+Detected Warning Events
+----------------------------------------
+{warning_rows.to_string(index=False) if not warning_rows.empty else "No warning events detected."}
 
 Generated Files
----------------
-outputs/speed_plot.png
-outputs/rpm_plot.png
-outputs/temperature_plot.png
-outputs/battery_plot.png
-outputs/throttle_brake_plot.png
-outputs/automotive_dashboard.png
+----------------------------------------
+{SPEED_PLOT_FILE}
+{RPM_PLOT_FILE}
+{TEMPERATURE_PLOT_FILE}
+{BATTERY_PLOT_FILE}
+{THROTTLE_BRAKE_PLOT_FILE}
+{DASHBOARD_FILE}
 
 Project Note
-------------
-This report was generated automatically using Python.
-The project demonstrates automotive sensor data analysis, warning detection,
-vehicle behavior evaluation, and automated engineering reporting.
+----------------------------------------
+This project demonstrates CSV-based automotive sensor data analysis,
+data validation, warning detection, engineering calculations,
+visualization, and automated report generation with Python.
 """
 
     REPORT_FILE.write_text(report_text.strip() + "\n", encoding="utf-8")
 
 
 def main() -> None:
-    """Run the complete automotive data analysis workflow."""
-    data = load_vehicle_data(DATA_FILE)
-    data = calculate_acceleration(data)
+    dataframe = load_vehicle_data(DATA_FILE)
+    dataframe = calculate_acceleration(dataframe)
+    dataframe = detect_warning_conditions(dataframe)
 
-    results = analyze_data(data)
+    analysis = analyze_vehicle_data(dataframe)
 
-    create_plots(data)
-    generate_report(results)
+    create_plots(dataframe)
+    generate_report(dataframe, analysis)
 
     print("Automotive analysis completed successfully.")
     print(f"Report saved as: {REPORT_FILE}")

@@ -35,7 +35,6 @@ The project is relevant for automotive engineering, mechatronics, data analysis,
 - Warning detection
 - Engineering visualization
 - Automated reporting
-  
 
 ## Repository Structure
 
@@ -48,7 +47,12 @@ automotive-data-analysis-python/
 ├── requirements.txt
 ├── .gitignore
 ├── screenshots/
-│   └── automotive_dashboard.png
+│   ├── automotive_dashboard.png
+│   ├── speed_plot.png
+│   ├── rpm_plot.png
+│   ├── temperature_plot.png
+│   ├── battery_plot.png
+│   └── throttle_brake_plot.png
 └── outputs/
     ├── automotive_report.txt
     ├── speed_plot.png
@@ -57,32 +61,7 @@ automotive-data-analysis-python/
     ├── battery_plot.png
     ├── throttle_brake_plot.png
     └── automotive_dashboard.png
-
-```## Example Output
-
-### Automotive Dashboard
-
-![Automotive Dashboard](screenshots/automotive_dashboard.png)
-
-### Vehicle Speed
-
-![Vehicle Speed](screenshots/speed_plot.png)
-
-### Engine RPM
-
-![Engine RPM](screenshots/rpm_plot.png)
-
-### Motor Temperature
-
-![Motor Temperature](screenshots/temperature_plot.png)
-
-### Battery Voltage
-
-![Battery Voltage](screenshots/battery_plot.png)
-
-### Throttle and Brake Signals
-
-![Throttle and Brake Signals](screenshots/throttle_brake_plot.png)
+```
 
 ## Input Data
 
@@ -153,6 +132,26 @@ After running the script, the following files are generated in the `outputs/` fo
 ### Automotive Dashboard
 
 ![Automotive Dashboard](screenshots/automotive_dashboard.png)
+
+### Vehicle Speed
+
+![Vehicle Speed](screenshots/speed_plot.png)
+
+### Engine RPM
+
+![Engine RPM](screenshots/rpm_plot.png)
+
+### Motor Temperature
+
+![Motor Temperature](screenshots/temperature_plot.png)
+
+### Battery Voltage
+
+![Battery Voltage](screenshots/battery_plot.png)
+
+### Throttle and Brake Signals
+
+![Throttle and Brake Signals](screenshots/throttle_brake_plot.png)
 
 ## How to Run
 
